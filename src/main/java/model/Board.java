@@ -1,7 +1,6 @@
 package model;
 
-import java.util.Arrays;
-import java.util.EnumMap;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
@@ -12,8 +11,9 @@ public class Board {
     private Integer moveCounter;
     private Integer halfMoveCounter;
     private final Piece[] occupation;
+    private static Square enPassant;
 
-    private Piece[][] board = {{Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE},
+    private static Piece[][] board = {{Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE},
             {Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE},
             {Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE},
             {Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE},
@@ -22,6 +22,8 @@ public class Board {
             {Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE},
             {Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE, Piece.NONE}};
 
+    private static Map<Square, Piece> squarePieceMap = new HashMap<>();
+
     public Board() {
         castleRight = new EnumMap<>(Side.class);
         setSideToMove(Side.WHITE);
@@ -29,6 +31,8 @@ public class Board {
         setHalfMoveCounter(0);
         occupation = new Piece[Square.values().length];
         Arrays.fill(occupation, Piece.NONE);
+        fillPieceSquareMap();
+        enPassant = Square.NONE;
     }
 
     public Side getSideToMove() {
@@ -73,6 +77,20 @@ public class Board {
         return board;
     }
 
+    public Square getEnPassant() {
+        return enPassant;
+    }
+
+    public void setEnPassant(Square square) {
+        enPassant = square;
+    }
+
+    public void fillPieceSquareMap() {
+        for (Square square : Square.values()) {
+            squarePieceMap.put(square, Piece.NONE);
+        }
+    }
+
     // e.g.: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1
     public void loadFromFen(String fen) {
         String squares = fen.substring(0, fen.indexOf(' '));
@@ -88,8 +106,10 @@ public class Board {
                 if (Character.isDigit(c)) {
                     file += Integer.parseInt(c + "");
                 } else {
-                    Square sq = Square.encode(Rank.allRanks[rank], File.allFiles[file]);
-                    setPiece(Piece.fromFenSymbol(String.valueOf(c)), sq, file, rank);
+                    Square square = Square.encode(Rank.allRanks[rank], File.allFiles[file]);
+                    Piece piece = Piece.fromFenSymbol(String.valueOf(c));
+                    setPiece(piece, square, file, rank);
+                    squarePieceMap.put(square, piece);
                     file++;
                 }
             }
@@ -124,14 +144,15 @@ public class Board {
             String s = flags[2].toUpperCase().trim();
             if (!s.equals("-")) {
                 Square ep = Square.valueOf(s);
-//                setEnPassant(ep);
+                setEnPassant(ep);
+                List<String> enPassantMoves = setEnPassantMoves(enPassant, sideToMove);
 //                setEnPassantTarget(findEnPassantTarget(ep, sideToMove));
 //                if (!(squareAttackedByPieceType(getEnPassant(), getSideToMove(), PieceType.PAWN) != 0 &&
 //                        verifyNotPinnedPiece(getSideToMove().flip(), getEnPassant(), getEnPassantTarget()))) {
 //                    setEnPassantTarget(Square.NONE);
 //                }
-//            } else {
-//                setEnPassant(Square.NONE);
+            } else {
+                setEnPassant(Square.NONE);
 //                setEnPassantTarget(Square.NONE);
             }
             if (flags.length >= 4) {
@@ -142,6 +163,31 @@ public class Board {
             }
         }
     }
+
+    public List<String> setEnPassantMoves(Square enPassantSquare, Side side) {
+        List<String> enPassantList = new ArrayList<>();
+        int currentOrd = Side.WHITE.equals(side) ? enPassantSquare.ordinal() - 8 : enPassantSquare.ordinal() + 8;
+        Rank currentRank = Square.values()[currentOrd].getRank();
+        Piece currentPiece = squarePieceMap.get(Square.values()[currentOrd]);
+        Square leftSquare = Square.values()[currentOrd - 1];
+        Piece leftPiece = squarePieceMap.get(Square.values()[currentOrd - 1]);
+        Square rightSquare = Square.values()[currentOrd + 1];
+        Piece rightPiece = squarePieceMap.get(Square.values()[currentOrd + 1]);
+        if (currentRank.equals(leftSquare.getRank()) && PieceType.PAWN.equals(leftPiece.getPieceType()) && !currentPiece.getPieceSide().equals(leftPiece.getPieceSide())) {
+            enPassantList.add(leftSquare.value() + "->" + enPassantSquare.value());
+        }
+        if (currentRank.equals(rightSquare.getRank()) && PieceType.PAWN.equals(rightPiece.getPieceType()) && !currentPiece.getPieceSide().equals(rightPiece.getPieceSide())) {
+            enPassantList.add(rightSquare.value() + "->" + enPassantSquare.value());
+        }
+
+        System.out.println("en passant moves:" + enPassantList);
+
+        return enPassantList;
+    }
+
+//    private void assignPiecesToSquares(Piece piece, Square square) {
+//        squarePieceMap.put(square, piece);
+//    }
 
     @Override
     public String toString() {
@@ -186,6 +232,8 @@ public class Board {
             }
             sb.append("\n");
         }
+        sb.append("\n");
+        squarePieceMap.forEach((key, value) -> sb.append(key).append(": ").append(value).append("   "));
         return sb.toString();
     }
 
