@@ -1,6 +1,8 @@
 package model;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
@@ -207,10 +209,67 @@ public class Board {
     }
 
     public void showPossibleMoves() {
+        AtomicBoolean moveKingOnly = new AtomicBoolean(false);
+        String kingPos = this.findKingPos(sideToMove);
+        List<String> moves = new ArrayList<>();
+        List<String> enemiesMoves = this.showPossibleMovesForSide(Side.values()[(sideToMove.ordinal() + 1) % 2]);
+
+        // find any piece trying to attack king
+        enemiesMoves.forEach(string -> {
+            if (string.contains(kingPos)) {
+                moveKingOnly.set(true);
+            }
+        });
+
+
+
+        if (moveKingOnly.get()) {
+            moves = this.showPossibleKingMoves(sideToMove);
+        } else {
+            moves = this.showPossibleMovesForSide(sideToMove);
+        }
+
+
+        System.out.println("\nMove: " + sideToMove);
+
+        Collections.sort(moves);
+        moves.forEach(string -> {
+            System.out.println(string + ", ");
+        });
+    }
+
+    private List<String> showPossibleKingMoves(Side side) {
         List<String> list = new ArrayList<>();
 
         squarePieceMap.forEach((key, value) -> {
-            if (this.sideToMove.equals(value.getPieceSide())) {
+            if (side.equals(value.getPieceSide())) {
+                if (value.getPieceType().equals(PieceType.KING)) {
+                    list.addAll(pawnMoves(key));
+                }
+            }
+        });
+
+        return list;
+    }
+
+    private String findKingPos(Side side) {
+        AtomicReference<String> kingPos = new AtomicReference<>("");
+        squarePieceMap.forEach((key, value) -> {
+            if (side.equals(value.getPieceSide())) {
+                if (value.getPieceType().equals(PieceType.KING)) {
+                    kingPos.set(Square.values()[key.ordinal()].value());
+                }
+            }
+        });
+
+        return kingPos.get();
+    }
+
+    private List<String> showPossibleMovesForSide(Side side) {
+        List<String> list = new ArrayList<>();
+
+        squarePieceMap.forEach((key, value) -> {
+            if (side.equals(value.getPieceSide())) {
                 if (value.getPieceType().equals(PieceType.PAWN)) {
                     list.addAll(pawnMoves(key));
                 } else if (value.getPieceType().equals(PieceType.KNIGHT)) {
@@ -228,17 +287,13 @@ public class Board {
             }
         });
 
-        System.out.println("\nMove: " + sideToMove);
-
-        Collections.sort(list);
-        list.forEach(string -> {
-            System.out.println(string + ", ");
-        });
+        return list;
     }
 
     private List<String> pawnMoves(Square square) {
         List<String> list = new ArrayList<>();
-        int sideModificator = sideToMove == Side.WHITE ? 1 : -1;
+        Side side = squarePieceMap.get(square).getPieceSide();
+        int sideModificator = side == Side.WHITE ? 1 : -1;
 
         // can move forward
         int movePos = square.ordinal() + 8 * sideModificator;
@@ -246,7 +301,7 @@ public class Board {
             list.add(square.value() + "->" + Square.values()[movePos].value());
 
             // is his first move
-            int secLine = sideToMove == Side.WHITE ? 1 : 6; // 1 = 2 line && 6 = 7 line
+            int secLine = side == Side.WHITE ? 1 : 6; // 1 = 2 line && 6 = 7 line
             movePos = square.ordinal() + 16 * sideModificator;
             if (square.getRank().ordinal() == secLine && squarePieceMap.get(Square.values()[movePos]).getPieceType() == null) {
                 list.add(square.value() + "->" + Square.values()[movePos].value());
@@ -256,14 +311,14 @@ public class Board {
         // can hit something
         int leftAttackPos = square.ordinal() + 7 * sideModificator;
         if (leftAttackPos >= 0 && leftAttackPos < 64 &&
-                (isPieceSideSameAs(Square.values()[leftAttackPos], (sideToMove.ordinal() + 1) % 2) || // attack move
+                (isPieceSideSameAs(Square.values()[leftAttackPos], (side.ordinal() + 1) % 2) || // attack move
                         enPassant.ordinal() == Square.values()[leftAttackPos].ordinal())) { //enPassant
             list.add(square.value() + "->" + Square.values()[leftAttackPos].value());
         }
 
         int rightAttackPos = square.ordinal() + 9 * sideModificator;
         if (rightAttackPos >= 0 && rightAttackPos < 64 &&
-                (isPieceSideSameAs(Square.values()[rightAttackPos], (sideToMove.ordinal() + 1) % 2) ||
+                (isPieceSideSameAs(Square.values()[rightAttackPos], (side.ordinal() + 1) % 2) ||
                         enPassant.ordinal() == Square.values()[rightAttackPos].ordinal())) {
             list.add(square.value() + "->" + Square.values()[rightAttackPos].value());
         }
@@ -324,6 +379,7 @@ public class Board {
     }
 
     private List<String> findPossibleMovesInDirection(Square square, int directionFile, int directionRank, int iterations) {
+        Side side = squarePieceMap.get(square).getPieceSide();
         List<String> list = new ArrayList<>();
         File curFile = square.getFile();
         Rank curRank = square.getRank();
@@ -346,9 +402,9 @@ public class Board {
             // can move here or attack this shit
             if (squarePieceMap.get(newSquare).getPieceType() == null) { // empty field
                 list.add(square.value() + "->" + newSquare.value());
-            } else if (isPieceSideSameAs(newSquare, sideToMove.ordinal())) { // same piece type
+            } else if (isPieceSideSameAs(newSquare, side.ordinal())) { // same piece type
                 break;
-            } else if (isPieceSideSameAs(newSquare, (sideToMove.ordinal() + 1) % 2)) { // enemies :)
+            } else if (isPieceSideSameAs(newSquare, (side.ordinal() + 1) % 2)) { // enemies :)
                 list.add(square.value() + "->" + newSquare.value());
                 break;
             }
