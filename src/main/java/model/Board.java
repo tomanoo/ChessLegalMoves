@@ -237,4 +237,36 @@ public class Board {
         return sb.toString();
     }
 
+    public void showPossibleMoves() {
+        squarePieceMap.forEach((key, value) -> {
+            if (this.sideToMove.equals(value.getPieceSide())) {
+                if (value.getPieceType().equals(PieceType.PAWN)) {
+
+                } else if (value.getPieceType().equals(PieceType.KNIGHT)) {
+
+                } else if (value.getPieceType().equals(PieceType.BISHOP)) {
+
+                } else if (value.getPieceType().equals(PieceType.ROOK)) {
+
+                } else if (value.getPieceType().equals(PieceType.QUEEN)) {
+
+                } else { // king
+
+                }
+            }
+        });
+    }
+
+    public List<String> pawnMoves(Square squere) {
+        int sideModyficator = sideToMove == Side.WHITE ? 1 : -1;
+
+        // can move forward
+
+        // can hit something
+
+        //enPassant
+
+        return new ArrayList<String>();
+    }
+
 }
