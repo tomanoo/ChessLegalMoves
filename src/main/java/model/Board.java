@@ -199,12 +199,12 @@ public class Board {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
-                sb.append(board[i][j].getFenSymbol());
+                sb.append(board[i][j].getFenSymbol() + " ");
             }
             sb.append("\n");
         }
-        sb.append("\n");
-        squarePieceMap.forEach((key, value) -> sb.append(key).append(": ").append(value).append("   "));
+//        sb.append("\n");
+//        squarePieceMap.forEach((key, value) -> sb.append(key).append(": ").append(value).append("   "));
         return sb.toString();
     }
 
@@ -221,21 +221,28 @@ public class Board {
             }
         });
 
-
-
         if (moveKingOnly.get()) {
             moves = this.showPossibleKingMoves(sideToMove);
         } else {
             moves = this.showPossibleMovesForSide(sideToMove);
         }
 
+        moves.addAll(checkCastling());
 
-        System.out.println("\nMove: " + sideToMove);
+        System.out.print("\nMove: " + sideToMove + "\nMoves:");
 
         Collections.sort(moves);
-        moves.forEach(string -> {
-            System.out.println(string + ", ");
-        });
+//        System.out.println("Moves: " + moves);
+
+        for (int i = 0; i < moves.size(); i++) {
+            if (i % 10 == 0) {
+                System.out.println("");
+            }
+            System.out.print(moves.get(i) + ", ");
+        }
+//        moves.forEach(string -> {
+//            System.out.println(string + ", ");
+//        });
     }
 
     private List<String> showPossibleKingMoves(Side side) {
@@ -425,6 +432,32 @@ public class Board {
             return true;
         }
         return false;
+    }
+
+    public List<String> checkCastling() {
+        List<String> castlingMovesList = new ArrayList<>();
+        CastleRight castling = castleRight.get(sideToMove);
+        if (Piece.WHITE_ROOK.equals(squarePieceMap.get(Square.A1)) && Piece.WHITE_KING.equals(squarePieceMap.get(Square.E1))
+                && Piece.NONE.equals(squarePieceMap.get(Square.B1)) && Piece.NONE.equals(squarePieceMap.get(Square.C1)) && Piece.NONE.equals(squarePieceMap.get(Square.D1))
+                && (CastleRight.KING_AND_QUEEN_SIDE.equals(castling) || CastleRight.QUEEN_SIDE.equals(castling)) && Side.WHITE.equals(sideToMove)) {
+            castlingMovesList.add("Castling: OOO");
+        }
+        if (Piece.WHITE_ROOK.equals(squarePieceMap.get(Square.H1)) && Piece.WHITE_KING.equals(squarePieceMap.get(Square.E1))
+                && Piece.NONE.equals(squarePieceMap.get(Square.F1)) && Piece.NONE.equals(squarePieceMap.get(Square.G1))
+                && (CastleRight.KING_AND_QUEEN_SIDE.equals(castling) || CastleRight.KING_SIDE.equals(castling)) && Side.WHITE.equals(sideToMove)) {
+            castlingMovesList.add("Castling: OO");
+        }
+        if (Piece.BLACK_ROOK.equals(squarePieceMap.get(Square.A8)) && Piece.BLACK_KING.equals(squarePieceMap.get(Square.E8))
+                && Piece.NONE.equals(squarePieceMap.get(Square.B8)) && Piece.NONE.equals(squarePieceMap.get(Square.C8)) && Piece.NONE.equals(squarePieceMap.get(Square.D8))
+                && (CastleRight.KING_AND_QUEEN_SIDE.equals(castling) || CastleRight.QUEEN_SIDE.equals(castling)) && Side.BLACK.equals(sideToMove)) {
+            castlingMovesList.add("Castling: OOO");
+        }
+        if (Piece.BLACK_ROOK.equals(squarePieceMap.get(Square.H8)) && Piece.BLACK_KING.equals(squarePieceMap.get(Square.E8))
+                && Piece.NONE.equals(squarePieceMap.get(Square.F8)) && Piece.NONE.equals(squarePieceMap.get(Square.G8))
+                && (CastleRight.KING_AND_QUEEN_SIDE.equals(castling) || CastleRight.KING_SIDE.equals(castling)) && Side.BLACK.equals(sideToMove)) {
+            castlingMovesList.add("Castling: OO");
+        }
+        return castlingMovesList;
     }
 
 }
