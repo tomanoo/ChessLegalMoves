@@ -69,7 +69,7 @@ public class Board {
 
     public void setPiece(Piece piece, Square square, int file, int rank) {
         if (!Piece.NONE.equals(piece) && !Square.NONE.equals(square)) {
-            board[7-rank][file] = piece;
+            board[7 - rank][file] = piece;
         }
     }
 
@@ -238,35 +238,148 @@ public class Board {
     }
 
     public void showPossibleMoves() {
+        List<String> list = new ArrayList<>();
+
         squarePieceMap.forEach((key, value) -> {
             if (this.sideToMove.equals(value.getPieceSide())) {
                 if (value.getPieceType().equals(PieceType.PAWN)) {
-
+                    list.addAll(pawnMoves(key));
                 } else if (value.getPieceType().equals(PieceType.KNIGHT)) {
-
+                    list.addAll(knightMove(key));
                 } else if (value.getPieceType().equals(PieceType.BISHOP)) {
-
+                    list.addAll(bishopMove(key));
                 } else if (value.getPieceType().equals(PieceType.ROOK)) {
-
+                    list.addAll(rookMoves(key));
                 } else if (value.getPieceType().equals(PieceType.QUEEN)) {
-
+                    list.addAll(rookMoves(key));
+                    list.addAll(bishopMove(key));
                 } else { // king
-
+                    list.addAll(kingMoves(key));
                 }
             }
         });
+
+        list.forEach(string -> {
+            System.out.println(string + ", ");
+        });
     }
 
-    public List<String> pawnMoves(Square squere) {
-        int sideModyficator = sideToMove == Side.WHITE ? 1 : -1;
+    private List<String> pawnMoves(Square square) {
+        List<String> list = new ArrayList<>();
+        int sideModificator = sideToMove == Side.WHITE ? 1 : -1;
 
         // can move forward
+        int movePos = square.ordinal() + 8 * sideModificator;
+        if (movePos >= 0 && movePos < 64 && squarePieceMap.get(Square.values()[movePos]).getPieceType() == null) {
+            list.add(square.value() + "->" + Square.values()[movePos].value());
+        }
 
         // can hit something
+        int leftAttackPos = square.ordinal() + 7 * sideModificator;
+        if (leftAttackPos >= 0 && leftAttackPos < 64 &&
+                (isPieceSideSameAs(leftAttackPos, (sideToMove.ordinal() + 1) % 2) || // attack move
+                        enPassant.ordinal() == Square.values()[leftAttackPos].ordinal())) { //enPassant
+            list.add(square.value() + "->" + Square.values()[leftAttackPos].value());
+        }
 
-        //enPassant
+        int rightAttackPos = square.ordinal() + 9 * sideModificator;
+        if (rightAttackPos >= 0 && rightAttackPos < 64 &&
+                (isPieceSideSameAs(rightAttackPos, (sideToMove.ordinal() + 1) % 2) ||
+                        enPassant.ordinal() == Square.values()[rightAttackPos].ordinal())) {
+            list.add(square.value() + "->" + Square.values()[rightAttackPos].value());
+        }
 
-        return new ArrayList<String>();
+        return list;
+    }
+
+    private List<String> kingMoves(Square square) {
+        List<String> list = new ArrayList<>();
+
+        list.addAll(findPossibleMovesInDirection(square, 1, 1));
+        list.addAll(findPossibleMovesInDirection(square, -1, 1));
+        list.addAll(findPossibleMovesInDirection(square, 7, 1));
+        list.addAll(findPossibleMovesInDirection(square, -7, 1));
+        list.addAll(findPossibleMovesInDirection(square, 8, 1));
+        list.addAll(findPossibleMovesInDirection(square, -8, 1));
+        list.addAll(findPossibleMovesInDirection(square, 9, 1));
+        list.addAll(findPossibleMovesInDirection(square, -9, 1));
+
+        return list;
+    }
+
+    private List<String> knightMove(Square square) {
+        List<String> list = new ArrayList<>();
+
+        list.addAll(findPossibleMovesInDirection(square, 6, 1));
+        list.addAll(findPossibleMovesInDirection(square, -6, 1));
+        list.addAll(findPossibleMovesInDirection(square, 10, 1));
+        list.addAll(findPossibleMovesInDirection(square, -10, 1));
+        list.addAll(findPossibleMovesInDirection(square, 15, 1));
+        list.addAll(findPossibleMovesInDirection(square, -15, 1));
+        list.addAll(findPossibleMovesInDirection(square, 17, 1));
+        list.addAll(findPossibleMovesInDirection(square, -17, 1));
+
+        return list;
+    }
+
+    private List<String> bishopMove(Square square) {
+        List<String> list = new ArrayList<>();
+
+        list.addAll(findPossibleMovesInDirection(square, 9, 8));
+        list.addAll(findPossibleMovesInDirection(square, -9, 8));
+        list.addAll(findPossibleMovesInDirection(square, 7, 8));
+        list.addAll(findPossibleMovesInDirection(square, -7, 8));
+
+        return list;
+    }
+
+    private List<String> rookMoves(Square square) {
+        List<String> list = new ArrayList<>();
+
+        list.addAll(findPossibleMovesInDirection(square, 8, 8));
+        list.addAll(findPossibleMovesInDirection(square, -8, 8));
+        list.addAll(findPossibleMovesInDirection(square, 1, 8));
+        list.addAll(findPossibleMovesInDirection(square, -1, 8));
+
+        return list;
+    }
+
+    private List<String> findPossibleMovesInDirection(Square square, int direction, int iterations) {
+        List<String> list = new ArrayList<>();
+        int nextDirection = direction;
+
+        for (int i = 0; i < iterations; i++) {
+            int nextPos = square.ordinal() + nextDirection;
+            // is even really possible bro? xD
+            if (nextPos < 0 || nextPos >= 64) {
+                break;
+            }
+
+            // can move here or attack this shit
+            if (squarePieceMap.get(Square.values()[nextPos]).getPieceType() == null) { // empty field
+                list.add(square.value() + "->" + Square.values()[nextPos].value());
+            } else if (isPieceSideSameAs(nextPos, sideToMove.ordinal())) { // same piece type
+                break;
+            } else if (isPieceSideSameAs(nextPos, (sideToMove.ordinal() + 1) % 2)) { // enemies :)
+                list.add(square.value() + "->" + Square.values()[nextPos].value());
+                break;
+            }
+
+            nextDirection = nextDirection + direction;
+        }
+
+        return list;
+    }
+
+
+    private boolean isPieceSideSameAs(int piecePos, int sideOrdinal) {
+        Side pieceSide = squarePieceMap.get(Square.values()[piecePos]).getPieceSide();
+        if (pieceSide == null) {
+            return false;
+        } else if (pieceSide.ordinal() == sideOrdinal) {
+            return true;
+        }
+        return false;
     }
 
 }
