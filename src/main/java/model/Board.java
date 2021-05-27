@@ -440,22 +440,22 @@ public class Board {
         if (Piece.WHITE_ROOK.equals(squarePieceMap.get(Square.A1)) && Piece.WHITE_KING.equals(squarePieceMap.get(Square.E1))
                 && Piece.NONE.equals(squarePieceMap.get(Square.B1)) && Piece.NONE.equals(squarePieceMap.get(Square.C1)) && Piece.NONE.equals(squarePieceMap.get(Square.D1))
                 && (CastleRight.KING_AND_QUEEN_SIDE.equals(castling) || CastleRight.QUEEN_SIDE.equals(castling)) && Side.WHITE.equals(sideToMove)) {
-            castlingMovesList.add("Castling: OOO");
+            castlingMovesList.add("Castling: O-O-O");
         }
         if (Piece.WHITE_ROOK.equals(squarePieceMap.get(Square.H1)) && Piece.WHITE_KING.equals(squarePieceMap.get(Square.E1))
                 && Piece.NONE.equals(squarePieceMap.get(Square.F1)) && Piece.NONE.equals(squarePieceMap.get(Square.G1))
                 && (CastleRight.KING_AND_QUEEN_SIDE.equals(castling) || CastleRight.KING_SIDE.equals(castling)) && Side.WHITE.equals(sideToMove)) {
-            castlingMovesList.add("Castling: OO");
+            castlingMovesList.add("Castling: O-O");
         }
         if (Piece.BLACK_ROOK.equals(squarePieceMap.get(Square.A8)) && Piece.BLACK_KING.equals(squarePieceMap.get(Square.E8))
                 && Piece.NONE.equals(squarePieceMap.get(Square.B8)) && Piece.NONE.equals(squarePieceMap.get(Square.C8)) && Piece.NONE.equals(squarePieceMap.get(Square.D8))
                 && (CastleRight.KING_AND_QUEEN_SIDE.equals(castling) || CastleRight.QUEEN_SIDE.equals(castling)) && Side.BLACK.equals(sideToMove)) {
-            castlingMovesList.add("Castling: OOO");
+            castlingMovesList.add("Castling: O-O-O");
         }
         if (Piece.BLACK_ROOK.equals(squarePieceMap.get(Square.H8)) && Piece.BLACK_KING.equals(squarePieceMap.get(Square.E8))
                 && Piece.NONE.equals(squarePieceMap.get(Square.F8)) && Piece.NONE.equals(squarePieceMap.get(Square.G8))
                 && (CastleRight.KING_AND_QUEEN_SIDE.equals(castling) || CastleRight.KING_SIDE.equals(castling)) && Side.BLACK.equals(sideToMove)) {
-            castlingMovesList.add("Castling: OO");
+            castlingMovesList.add("Castling: O-O");
         }
         return castlingMovesList;
     }
